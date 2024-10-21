@@ -1,0 +1,32 @@
+version: '3.4'
+services:
+  app:
+    build: .
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/home/app
+    depends_on:
+      - eventstoredb
+
+  eventstoredb:
+    image: eventstore/eventstore:lts
+    environment:
+      - EVENTSTORE_INSECURE=true # let eventstore run without ceritficate
+      - EVENTSTORE_RUN_PROJECTIONS=All # set internal tcp port
+      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+    ports:
+      - '1113:1113' # map internal tcp port
+      - '2113:2113' # map internal admin ui port
+    volumes:
+      - type: volume
+        source: eventstore-data
+        target: /var/lib/eventstore
+      - type: volume
+        source: eventstore-logs
+        target: /var/log/eventstore
+    restart: unless-stopped
+
+volumes:
+  eventstore-data:
+  eventstore-logs:
