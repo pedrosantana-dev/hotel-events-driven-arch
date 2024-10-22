@@ -1,11 +1,17 @@
-import { EventStoreDBClient } from '@eventstore/db-client';
-import { Global, Module, Provider } from '@nestjs/common';
+import { EventStoreDBClient, FORWARDS, START } from '@eventstore/db-client';
+import {
+  Global,
+  Inject,
+  Module,
+  OnApplicationBootstrap,
+  Provider,
+} from '@nestjs/common';
 
 const EventStore: Provider = {
-  provide: 'EVET_STORE',
+  provide: 'EVENT_STORE',
   useFactory: () =>
     EventStoreDBClient.connectionString(
-      `esdb://admin:changeit@localhost:2113?tls=false`,
+      `esdb://admin:changeit@eventstoredb:2113?tls=false`,
     ),
 };
 
@@ -14,4 +20,15 @@ const EventStore: Provider = {
   providers: [EventStore],
   exports: [EventStore],
 })
-export class EventStoreModule {}
+export class EventStoreModule implements OnApplicationBootstrap {
+  constructor(
+    @Inject('EVENT_STORE') private readonly client: EventStoreDBClient,
+  ) {}
+  onApplicationBootstrap() {
+    this.client.readAll({
+      direction: FORWARDS,
+      fromPosition: START,
+      maxCount: 1,
+    });
+  }
+}
